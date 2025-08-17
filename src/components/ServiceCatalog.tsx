@@ -335,6 +335,9 @@ export function ServiceCatalog() {
   const [deployStrategy, setDeployStrategy] = useState<'rolling' | 'blue-green' | 'canary'>('rolling');
   const [deployReplicas, setDeployReplicas] = useState<number>(2);
   const [deployRunSmokeTests, setDeployRunSmokeTests] = useState<boolean>(true);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewServiceId, setViewServiceId] = useState<string>('');
+  const [viewTab, setViewTab] = useState<'overview' | 'logs' | 'alerts'>('overview');
 
   const categories = [...new Set(servicesState.map(service => service.category))];
 
@@ -402,7 +405,9 @@ export function ServiceCatalog() {
         setShowDeployModal(true);
         break;
       case 'view':
-        alert(`Viewing details for: ${service.name}`);
+        setViewServiceId(service.id);
+        setViewTab('overview');
+        setShowViewModal(true);
         break;
     }
   };
@@ -853,6 +858,101 @@ export function ServiceCatalog() {
               >
                 Deploy
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Service Modal */}
+      {showViewModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 shadow-xl max-w-4xl w-full max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {servicesState.find(s => s.id === viewServiceId)?.name || 'Service'}
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {servicesState.find(s => s.id === viewServiceId)?.description}
+                </p>
+              </div>
+              <button type="button" onClick={() => setShowViewModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="border-b border-gray-200 dark:border-gray-700 px-6">
+              <nav className="-mb-px flex space-x-8">
+                {['overview','logs','alerts'].map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setViewTab(tab as any)}
+                    className={`py-3 px-1 border-b-2 text-sm font-medium transition-colors ${
+                      viewTab === tab
+                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                    }`}
+                  >
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-auto p-6">
+              {viewTab === 'overview' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="border border-gray-200 dark:border-gray-700 p-4">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Details</h3>
+                    <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                      <div>Version: {servicesState.find(s => s.id === viewServiceId)?.version}</div>
+                      <div>Owner: {servicesState.find(s => s.id === viewServiceId)?.owner}</div>
+                      <div>Category: {servicesState.find(s => s.id === viewServiceId)?.category}</div>
+                      <div>Instances: {servicesState.find(s => s.id === viewServiceId)?.instances}</div>
+                    </div>
+                  </div>
+                  <div className="border border-gray-200 dark:border-gray-700 p-4">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Performance</h3>
+                    <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                      <div>CPU: {servicesState.find(s => s.id === viewServiceId)?.cpu}%</div>
+                      <div>Memory: {servicesState.find(s => s.id === viewServiceId)?.memory}%</div>
+                      <div>Requests: {servicesState.find(s => s.id === viewServiceId)?.requests.toLocaleString()}</div>
+                      <div>Uptime: {servicesState.find(s => s.id === viewServiceId)?.uptime}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {viewTab === 'logs' && (
+                <div className="space-y-3">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Recent logs</div>
+                  <div className="bg-gray-900 text-white p-3 text-xs font-mono overflow-auto">
+{`[INFO] Service started\n[INFO] Listening on port 3000\n[WARN] High memory usage detected: 78%\n[INFO] Request GET /health 200 (12ms)\n[ERROR] Upstream timeout POST /api/v1/payments (504)`}
+                  </div>
+                </div>
+              )}
+
+              {viewTab === 'alerts' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border border-gray-200 dark:border-gray-700 p-3">
+                    <div>
+                      <div className="text-sm font-semibold text-red-600 dark:text-red-400">High Error Rate</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">5xx errors exceed threshold in the last 5m</div>
+                    </div>
+                    <span className="text-xs bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-2 py-1">critical</span>
+                  </div>
+                  <div className="flex items-center justify-between border border-gray-200 dark:border-gray-700 p-3">
+                    <div>
+                      <div className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">High Response Time</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">p95 latency over 1s in the last 10m</div>
+                    </div>
+                    <span className="text-xs bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2 py-1">warning</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
