@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   BookOpen,
   Search,
@@ -15,6 +15,174 @@ import {
   ExternalLink,
   X,
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import mermaid from 'mermaid';
+
+const MermaidDiagram: React.FC<{ code: string }> = ({ code }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    try {
+      mermaid.initialize({ startOnLoad: false });
+    } catch {
+      // ignore init errors (e.g., already initialized)
+    }
+    (async () => {
+      try {
+        const id = `mermaid-${Math.random().toString(36).slice(2)}`;
+        const { svg } = await mermaid.render(id, code);
+        if (isMounted && containerRef.current) {
+          containerRef.current.innerHTML = svg;
+        }
+      } catch (err) {
+        if (containerRef.current) {
+          containerRef.current.textContent = 'Failed to render diagram';
+        }
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [code]);
+
+  return <div ref={containerRef} className="overflow-auto" />;
+};
+
+interface OpenApiSpec {
+  openapi?: string;
+  info?: { title?: string; version?: string; description?: string };
+  servers?: Array<{ url: string; description?: string }>;
+  paths?: Record<string, any>;
+}
+
+const isOpenApiSpec = (content: string): OpenApiSpec | null => {
+  try {
+    const obj = JSON.parse(content) as OpenApiSpec;
+    if (obj && obj.openapi && obj.paths) return obj;
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+const OpenApiRenderer: React.FC<{ spec: OpenApiSpec }> = ({ spec }) => {
+  const paths = spec.paths || {};
+  const entries = Object.entries(paths) as Array<[string, Record<string, any>]>;
+
+  const generateSampleFromSchema = (schema: any, depth = 0): any => {
+    if (!schema || depth > 3) return null;
+    if (schema.example !== undefined) return schema.example;
+    if (schema.default !== undefined) return schema.default;
+    const schemaType = schema.type || (schema.properties ? 'object' : schema.items ? 'array' : undefined);
+    switch (schemaType) {
+      case 'string':
+        return schema.format === 'date-time' ? new Date().toISOString() : schema.format === 'email' ? 'user@example.com' : 'string';
+      case 'integer':
+      case 'number':
+        return 0;
+      case 'boolean':
+        return true;
+      case 'array':
+        return [generateSampleFromSchema(schema.items, depth + 1)];
+      case 'object': {
+        const result: Record<string, any> = {};
+        const props = schema.properties || {};
+        Object.keys(props).slice(0, 10).forEach((key) => {
+          result[key] = generateSampleFromSchema(props[key], depth + 1);
+        });
+        return result;
+      }
+      default:
+        return null;
+    }
+  };
+
+  const pickJsonMedia = (content: any) => {
+    if (!content) return null;
+    return content['application/json'] || content['application/*+json'] || null;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-blue-50 dark:bg-blue-900/10 p-4">
+        <h3 className="text-xl font-semibold text-blue-900 dark:text-blue-100">
+          {spec.info?.title} {spec.info?.version ? `v${spec.info.version}` : ''}
+        </h3>
+        {spec.info?.description && (
+          <p className="text-blue-800 dark:text-blue-200 mt-1">{spec.info.description}</p>
+        )}
+        {spec.servers && spec.servers.length > 0 && (
+          <div className="mt-2 text-sm text-blue-800 dark:text-blue-200">
+            Servers:
+            <ul className="list-disc list-inside">
+              {spec.servers.map((s, i) => (
+                <li key={i}>
+                  <span className="font-mono">{s.url}</span>
+                  {s.description ? ` — ${s.description}` : ''}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+      <div className="space-y-4">
+        {entries.map(([path, methods]) => (
+          <div key={path} className="border border-gray-200 dark:border-gray-700 p-4">
+            <h4 className="font-mono text-lg font-semibold text-gray-900 dark:text-white mb-3">{path}</h4>
+            <div className="space-y-4">
+              {Object.entries(methods).map(([method, details]: [string, any]) => {
+                const reqMedia = pickJsonMedia(details?.requestBody?.content);
+                const reqSchema = reqMedia?.schema;
+                const reqSample = generateSampleFromSchema(reqSchema);
+                const res200 = details?.responses?.['200'] || details?.responses?.['201'];
+                const resMedia = pickJsonMedia(res200?.content);
+                const resSchema = resMedia?.schema;
+                const resSample = generateSampleFromSchema(resSchema);
+                return (
+                  <div key={method} className="space-y-2">
+                    <div className="flex items-center space-x-3">
+                      <span className={`px-2 py-1 text-xs font-medium ${
+                        method.toUpperCase() === 'GET'
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                          : method.toUpperCase() === 'POST'
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                          : method.toUpperCase() === 'PUT'
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                          : method.toUpperCase() === 'DELETE'
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                          : 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
+                      }`}>{method.toUpperCase()}</span>
+                      <span className="text-gray-900 dark:text-white">
+                        {details?.summary || '(no summary)'}
+                      </span>
+                    </div>
+                    {reqSample && (
+                      <div className="ml-6">
+                        <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Request JSON</div>
+                        <pre className="bg-gray-900 text-white p-3 overflow-auto text-xs">
+{JSON.stringify(reqSample, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                    {resSample && (
+                      <div className="ml-6">
+                        <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Response JSON</div>
+                        <pre className="bg-gray-900 text-white p-3 overflow-auto text-xs">
+{JSON.stringify(resSample, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 interface Document {
   id: string;
@@ -2393,10 +2561,17 @@ export const Documentation: React.FC = () => {
               </button>
             </div>
             <div className="flex-1 overflow-auto p-6">
-              <div className="prose dark:prose-invert max-w-none">
-                <pre className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                  {selectedDoc.content}
-                </pre>
+              <div className="prose max-w-none">
+                {/* OpenAPI/Swagger JSON */}
+                {isOpenApiSpec(selectedDoc.content) ? (
+                  <OpenApiRenderer spec={isOpenApiSpec(selectedDoc.content)!} />
+                ) : /^\s*(graph|sequenceDiagram|flowchart)\b/.test(selectedDoc.content.trim()) ? (
+                  <MermaidDiagram code={selectedDoc.content} />
+                ) : (
+                  <div className="prose max-w-none text-gray-900 dark:text-white">
+                    <ReactMarkdown>{selectedDoc.content}</ReactMarkdown>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700">

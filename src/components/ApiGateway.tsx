@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Globe,
   Shield,
@@ -21,6 +21,8 @@ import {
   ChevronRight,
   FileText,
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import mermaid from 'mermaid';
 
 interface Route {
   id: string;
@@ -629,9 +631,34 @@ export const ApiGateway: React.FC = () => {
         return <div className="text-red-500">Invalid Swagger specification</div>;
       }
     } else if (doc.type === 'mermaid') {
+      const MermaidDiagram: React.FC<{ chart: string; id: string }> = ({ chart, id }) => {
+        const containerRef = useRef<HTMLDivElement>(null);
+        useEffect(() => {
+          let isMounted = true;
+          try {
+            mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+          } catch {}
+          const render = async () => {
+            try {
+              const { svg } = await mermaid.render(`mermaid-${id}-${Math.random().toString(36).slice(2)}`, chart);
+              if (isMounted && containerRef.current) {
+                containerRef.current.innerHTML = svg;
+              }
+            } catch (e) {
+              if (isMounted && containerRef.current) {
+                containerRef.current.textContent = 'Invalid Mermaid diagram';
+              }
+            }
+          };
+          render();
+          return () => { isMounted = false; };
+        }, [chart, id]);
+        return <div ref={containerRef} className="overflow-auto" />;
+      };
+
       return (
         <div className="space-y-4">
-          <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-lg">
+          <div className="bg-purple-50 dark:bg-purple-900/10 p-4">
             <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-100">
               {doc.title}
             </h3>
@@ -639,15 +666,8 @@ export const ApiGateway: React.FC = () => {
               Architecture diagram for {doc.service}
             </p>
           </div>
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-            <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-              {doc.content}
-            </pre>
-            <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/10 rounded-lg">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                💡 This Mermaid diagram would be rendered as an interactive flowchart in a full implementation.
-              </p>
-            </div>
+          <div className="bg-white dark:bg-gray-800 p-4 border border-gray-200 dark:border-gray-700">
+            <MermaidDiagram chart={doc.content} id={doc.id} />
           </div>
         </div>
       );
@@ -655,7 +675,7 @@ export const ApiGateway: React.FC = () => {
       // Markdown
       return (
         <div className="space-y-4">
-          <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-lg">
+          <div className="bg-green-50 dark:bg-green-900/10 p-4">
             <h3 className="text-lg font-semibold text-green-900 dark:text-green-100">
               {doc.title}
             </h3>
@@ -664,9 +684,7 @@ export const ApiGateway: React.FC = () => {
             </p>
           </div>
           <div className="prose dark:prose-invert max-w-none">
-            <pre className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-              {doc.content}
-            </pre>
+            <ReactMarkdown>{doc.content}</ReactMarkdown>
           </div>
         </div>
       );
