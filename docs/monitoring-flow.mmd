@@ -1,0 +1,45 @@
+sequenceDiagram
+    participant App as Application
+    participant Prom as Prometheus
+    participant Graf as Grafana
+    participant Alert as AlertManager
+    participant ES as Elasticsearch
+    participant Jaeger as Jaeger
+    participant Notify as Notification Service
+    participant Team as Development Team
+    
+    Note over App,Team: Application Monitoring Flow
+    
+    App->>Prom: Emit metrics (/metrics endpoint)
+    App->>ES: Send logs (via Fluentd)
+    App->>Jaeger: Send traces (OpenTelemetry)
+    
+    loop Every 15 seconds
+        Prom->>App: Scrape metrics
+    end
+    
+    Graf->>Prom: Query metrics
+    Graf->>ES: Query logs
+    Graf->>Jaeger: Query traces
+    
+    Note over Graf: Create dashboards and visualizations
+    
+    Prom->>Alert: Evaluate alert rules
+    
+    alt Alert condition met
+        Alert->>Notify: Send alert
+        Notify->>Team: Email notification
+        Notify->>Team: Slack message
+        Notify->>Team: PagerDuty (if critical)
+    end
+    
+    Team->>Graf: View dashboards
+    Team->>ES: Search logs
+    Team->>Jaeger: Trace requests
+    
+    Note over Team: Investigate and resolve issues
+    
+    Team->>App: Deploy fix
+    App->>Prom: Updated metrics
+    Alert->>Notify: Alert resolved
+    Notify->>Team: Resolution notification

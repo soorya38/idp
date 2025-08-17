@@ -1,0 +1,77 @@
+graph TB
+    subgraph "Frontend Layer"
+        UI[Web Dashboard]
+        API_GW[API Gateway]
+        LB[Load Balancer]
+    end
+    
+    subgraph "Application Services"
+        SC[Service Catalog]
+        EM[Environment Manager]
+        PE[Pipeline Engine]
+        IC[Infrastructure Controller]
+        NS[Notification Service]
+        AS[Auth Service]
+    end
+    
+    subgraph "Data Layer"
+        PG[(PostgreSQL)]
+        RD[(Redis)]
+        ES[(Elasticsearch)]
+        IF[(InfluxDB)]
+    end
+    
+    subgraph "Infrastructure Layer"
+        K8S[Kubernetes Cluster]
+        DR[Docker Registry]
+        PROM[Prometheus]
+        GRAF[Grafana]
+    end
+    
+    subgraph "External Systems"
+        GIT[Git Repositories]
+        CLOUD[Cloud Providers]
+        SLACK[Slack/Teams]
+        EMAIL[Email Service]
+    end
+    
+    UI --> API_GW
+    API_GW --> LB
+    LB --> SC
+    LB --> EM
+    LB --> PE
+    LB --> IC
+    LB --> NS
+    LB --> AS
+    
+    SC --> PG
+    SC --> RD
+    EM --> PG
+    PE --> PG
+    PE --> RD
+    IC --> PG
+    NS --> RD
+    AS --> PG
+    AS --> RD
+    
+    SC --> ES
+    PE --> ES
+    IC --> ES
+    
+    PROM --> IF
+    GRAF --> IF
+    GRAF --> PROM
+    
+    PE --> GIT
+    IC --> CLOUD
+    NS --> SLACK
+    NS --> EMAIL
+    
+    K8S --> DR
+    K8S --> PROM
+    
+    style UI fill:#e3f2fd
+    style API_GW fill:#f3e5f5
+    style PG fill:#e8f5e8
+    style K8S fill:#fff3e0
+    style CLOUD fill:#ffebee

@@ -1,0 +1,38 @@
+graph TD
+    A[Developer] -->|Push Code| B[Git Repository]
+    B -->|Webhook| C[CI/CD Pipeline]
+    C -->|Build| D[Build Service]
+    D -->|Test| E[Test Suite]
+    E -->|Success| F[Container Registry]
+    E -->|Failure| G[Notification Service]
+    G -->|Alert| A
+    
+    F -->|Image Ready| H[Deployment Controller]
+    H -->|Deploy| I{Environment Type}
+    
+    I -->|Development| J[Dev Environment]
+    I -->|Staging| K[Staging Environment]
+    I -->|Production| L[Production Environment]
+    
+    J --> M[Health Check]
+    K --> M
+    L --> M
+    
+    M -->|Healthy| N[Service Catalog Update]
+    M -->|Unhealthy| O[Rollback]
+    
+    N --> P[Monitoring Setup]
+    P --> Q[Alerting Configuration]
+    
+    O -->|Rollback Complete| R[Incident Report]
+    R --> A
+    
+    Q --> S[Dashboard Update]
+    S --> T[Deployment Complete]
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#e8f5e8
+    style F fill:#fff3e0
+    style L fill:#ffebee
+    style T fill:#e0f2f1
