@@ -31,6 +31,7 @@ import {
   Network,
   Code,
   Webhook,
+  X,
 } from 'lucide-react';
 
 interface Service {
@@ -54,7 +55,7 @@ interface Service {
   dependencies: string[];
 }
 
-const services: Service[] = [
+const initialServices: Service[] = [
   {
     id: '1',
     name: 'User Service',
@@ -326,16 +327,64 @@ export function ServiceCatalog() {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [servicesState, setServicesState] = useState<Service[]>(initialServices);
+  const [showDeployModal, setShowDeployModal] = useState(false);
+  const [selectedServiceId, setSelectedServiceId] = useState<string>(initialServices[0]?.id ?? '');
+  const [deployEnvironment, setDeployEnvironment] = useState<'staging' | 'production'>('staging');
+  const [deployTag, setDeployTag] = useState<string>('latest');
+  const [deployStrategy, setDeployStrategy] = useState<'rolling' | 'blue-green' | 'canary'>('rolling');
+  const [deployReplicas, setDeployReplicas] = useState<number>(2);
+  const [deployRunSmokeTests, setDeployRunSmokeTests] = useState<boolean>(true);
 
-  const categories = [...new Set(services.map(service => service.category))];
+  const categories = [...new Set(servicesState.map(service => service.category))];
 
-  const filteredServices = services.filter((service) => {
+  const filteredServices = servicesState.filter((service) => {
     const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          service.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'all' || service.category === filterCategory;
     const matchesStatus = filterStatus === 'all' || service.status === filterStatus;
     return matchesSearch && matchesCategory && matchesStatus;
   });
+
+  const startMockDeploy = (serviceId: string, options?: {
+    environment?: 'staging' | 'production',
+    tag?: string,
+    strategy?: 'rolling' | 'blue-green' | 'canary',
+    replicas?: number,
+    runSmokeTests?: boolean,
+  }) => {
+    // Set status to deploying
+    setServicesState(previousServices =>
+      previousServices.map(currentService =>
+        currentService.id === serviceId
+          ? { ...currentService, status: 'deploying' }
+          : currentService
+      )
+    );
+
+    // Simulate deploy finishing
+    window.setTimeout(() => {
+      // eslint-disable-next-line no-console
+      console.log('Mock deploy complete with options:', {
+        serviceId,
+        environment: options?.environment,
+        tag: options?.tag,
+        strategy: options?.strategy,
+        replicas: options?.replicas,
+        runSmokeTests: options?.runSmokeTests,
+      });
+      setServicesState(previousServices =>
+        previousServices.map(currentService => {
+          if (currentService.id !== serviceId) return currentService;
+          return {
+            ...currentService,
+            status: 'running',
+            lastDeployed: `just now${options?.environment ? ` (${options.environment})` : ''}`,
+          };
+        })
+      );
+    }, 2500);
+  };
 
   const handleServiceAction = (service: Service, action: string) => {
     switch (action) {
@@ -349,7 +398,8 @@ export function ServiceCatalog() {
         alert(`Restarting service: ${service.name}`);
         break;
       case 'deploy':
-        alert(`Deploying service: ${service.name}`);
+        setSelectedServiceId(service.id);
+        setShowDeployModal(true);
         break;
       case 'view':
         alert(`Viewing details for: ${service.name}`);
@@ -369,7 +419,7 @@ export function ServiceCatalog() {
             Manage and monitor all your microservices
           </p>
         </div>
-        <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+        <button type="button" onClick={() => setShowDeployModal(true)} className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition-colors">
           <Plus className="w-4 h-4" />
           <span>Deploy Service</span>
         </button>
@@ -382,7 +432,7 @@ export function ServiceCatalog() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Total Services</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
-                {services.length}
+                {servicesState.length}
               </p>
             </div>
             <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
@@ -396,7 +446,7 @@ export function ServiceCatalog() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Running</p>
               <p className="text-2xl font-semibold text-green-600 dark:text-green-400 mt-1">
-                {services.filter(s => s.status === 'running').length}
+                {servicesState.filter(s => s.status === 'running').length}
               </p>
             </div>
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
@@ -410,7 +460,7 @@ export function ServiceCatalog() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Healthy</p>
               <p className="text-2xl font-semibold text-green-600 dark:text-green-400 mt-1">
-                {services.filter(s => s.health === 'healthy').length}
+                {servicesState.filter(s => s.health === 'healthy').length}
               </p>
             </div>
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
@@ -424,7 +474,7 @@ export function ServiceCatalog() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Total Requests</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
-                {services.reduce((sum, s) => sum + s.requests, 0).toLocaleString()}
+                {servicesState.reduce((sum, s) => sum + s.requests, 0).toLocaleString()}
               </p>
             </div>
             <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center">
@@ -697,6 +747,113 @@ export function ServiceCatalog() {
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Deploy Service Modal */}
+      {showDeployModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Deploy Service</h2>
+              <button type="button" onClick={() => setShowDeployModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Service</label>
+                <select
+                  value={selectedServiceId}
+                  onChange={(e) => setSelectedServiceId(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {servicesState.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Environment</label>
+                  <select
+                    value={deployEnvironment}
+                    onChange={(e) => setDeployEnvironment(e.target.value as 'staging' | 'production')}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="staging">Staging</option>
+                    <option value="production">Production</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Version Tag</label>
+                  <input
+                    type="text"
+                    value={deployTag}
+                    onChange={(e) => setDeployTag(e.target.value)}
+                    placeholder="latest or v1.2.3 or sha"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Strategy</label>
+                  <select
+                    value={deployStrategy}
+                    onChange={(e) => setDeployStrategy(e.target.value as 'rolling' | 'blue-green' | 'canary')}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="rolling">Rolling</option>
+                    <option value="blue-green">Blue-Green</option>
+                    <option value="canary">Canary</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Replicas</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={deployReplicas}
+                    onChange={(e) => setDeployReplicas(parseInt(e.target.value || '1', 10))}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  id="deploy-smoke-tests"
+                  type="checkbox"
+                  checked={deployRunSmokeTests}
+                  onChange={(e) => setDeployRunSmokeTests(e.target.checked)}
+                  className="h-4 w-4 border border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                />
+                <label htmlFor="deploy-smoke-tests" className="text-sm text-gray-700 dark:text-gray-300">Run smoke tests after deploy</label>
+              </div>
+            </div>
+            <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
+              <button type="button" onClick={() => setShowDeployModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                Cancel
+              </button>
+              <button type="button"
+                onClick={() => {
+                  if (selectedServiceId) {
+                    startMockDeploy(selectedServiceId, {
+                      environment: deployEnvironment,
+                      tag: deployTag,
+                      strategy: deployStrategy,
+                      replicas: deployReplicas,
+                      runSmokeTests: deployRunSmokeTests,
+                    });
+                  }
+                  setShowDeployModal(false);
+                }}
+                className="px-4 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              >
+                Deploy
+              </button>
+            </div>
           </div>
         </div>
       )}

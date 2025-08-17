@@ -10,7 +10,7 @@ export function Environments() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Production</h3>
@@ -27,7 +27,7 @@ export function Environments() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Staging</h3>
@@ -44,7 +44,7 @@ export function Environments() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Development</h3>
