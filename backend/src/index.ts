@@ -6,6 +6,7 @@ import { logger } from './logger.js';
 import { integrationsRouter } from './routes/integrations.js';
 import { healthRouter } from './routes/health.js';
 import { jiraRouter } from './routes/jira.js';
+import { planRouter } from './routes/plan.js';
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/health', healthRouter);
 app.use('/api/integrations', integrationsRouter);
 app.use('/api/jira', jiraRouter);
+app.use('/api/plan', planRouter);
 
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
 	logger.error({ err }, 'Unhandled error');

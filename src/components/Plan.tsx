@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { List, User, Tag, Calendar, Flag } from 'lucide-react';
 
 type JiraStatus = 'Backlog' | 'To Do' | 'In Progress' | 'In Review' | 'Done' | 'Blocked';
@@ -13,59 +13,23 @@ interface JiraTask {
   labels: string[];
 }
 
-const tasks: JiraTask[] = [
-  {
-    key: 'PLAN-101',
-    summary: 'Create onboarding flow for new services',
-    status: 'In Progress',
-    assignee: 'soorya',
-    priority: 'High',
-    dueDate: '2025-08-25',
-    labels: ['services', 'onboarding'],
-  },
-  {
-    key: 'PLAN-102',
-    summary: 'Add health checks to API Gateway routes',
-    status: 'To Do',
-    assignee: 'akilesh',
-    priority: 'Medium',
-    dueDate: '2025-08-28',
-    labels: ['api', 'gateway'],
-  },
-  {
-    key: 'PLAN-103',
-    summary: 'Implement blue/green deploy strategy for payments',
-    status: 'In Review',
-    assignee: 'devopsteam',
-    priority: 'High',
-    dueDate: '2025-08-30',
-    labels: ['deploy', 'strategy'],
-  },
-  {
-    key: 'PLAN-104',
-    summary: 'Mobile app log forwarding to central store',
-    status: 'Backlog',
-    assignee: 'mobile',
-    priority: 'Low',
-    labels: ['mobile', 'logging'],
-  },
-  {
-    key: 'PLAN-105',
-    summary: 'Add SLO dashboards for staging',
-    status: 'Blocked',
-    assignee: 'test',
-    priority: 'Critical',
-    labels: ['observability', 'slo'],
-  },
-  {
-    key: 'PLAN-106',
-    summary: 'Migrate DB migrations to timestamped files',
-    status: 'Done',
-    assignee: 'devopsteam',
-    priority: 'Medium',
-    labels: ['database', 'migrations'],
-  },
-];
+export function Plan() {
+  const [tasks, setTasks] = useState<JiraTask[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/plan/tasks');
+        const data = await res.json();
+        setTasks(Array.isArray(data.tasks) ? data.tasks : []);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
 const statusBadgeClass = (status: JiraStatus) => {
   const base = 'text-xs px-2 py-1 border font-medium';
@@ -86,13 +50,16 @@ const statusBadgeClass = (status: JiraStatus) => {
   }
 };
 
-export function Plan() {
   return (
     <div className="p-6">
       <div className="flex items-center gap-3 mb-6">
         <List className="w-6 h-6 text-blue-600 dark:text-blue-400" />
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Plan</h1>
       </div>
+
+      {loading && (
+        <div className="text-sm text-gray-500 dark:text-gray-400">Loading tasks…</div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tasks.map((task) => (
