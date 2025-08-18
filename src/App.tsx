@@ -11,11 +11,13 @@ import { Documentation } from './components/Documentation';
 import { PullRequests } from './components/PullRequests';
 import { DatabaseMigrations } from './components/DatabaseMigrations';
 import { ApiGateway } from './components/ApiGateway';
+import { Plan } from './components/Plan';
 
 export type NavigationItem = 
   | 'dashboard' 
   | 'services' 
   | 'environments' 
+  | 'plan'
   | 'infrastructure' 
   | 'pipelines' 
   | 'documentation'
@@ -37,6 +39,8 @@ function App() {
         return <ServiceCatalog />;
       case 'environments':
         return <Environments />;
+      case 'plan':
+        return <Plan />;
       case 'infrastructure':
         return <Infrastructure />;
       case 'pipelines':

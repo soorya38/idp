@@ -13,6 +13,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  List,
 } from 'lucide-react';
 import { NavigationItem } from '../App';
 
@@ -27,6 +28,7 @@ const navigationItems = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
   { id: 'services', label: 'Service Catalog', icon: Package },
   { id: 'environments', label: 'Environments', icon: Globe },
+  { id: 'plan', label: 'Plan', icon: List },
   { id: 'infrastructure', label: 'Infrastructure', icon: Server },
   { id: 'pipelines', label: 'CI/CD Pipelines', icon: GitBranch },
   { id: 'documentation', label: 'Documentation', icon: BookOpen },
