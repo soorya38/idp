@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Home,
   Package,
+  Bug,
   Globe,
   Server,
   GitBranch,
@@ -27,6 +28,7 @@ interface SidebarProps {
 const navigationItems = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
   { id: 'services', label: 'Service Catalog', icon: Package },
+  { id: 'jira', label: 'Jira', icon: Bug },
   { id: 'environments', label: 'Environments', icon: Globe },
   { id: 'plan', label: 'Plan', icon: List },
   { id: 'infrastructure', label: 'Infrastructure', icon: Server },

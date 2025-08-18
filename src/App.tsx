@@ -12,11 +12,13 @@ import { PullRequests } from './components/PullRequests';
 import { DatabaseMigrations } from './components/DatabaseMigrations';
 import { ApiGateway } from './components/ApiGateway';
 import { Plan } from './components/Plan';
+import { Jira } from './components/Jira';
 
 export type NavigationItem = 
   | 'dashboard' 
   | 'services' 
   | 'environments' 
+  | 'jira'
   | 'plan'
   | 'infrastructure' 
   | 'pipelines' 
@@ -39,6 +41,8 @@ function App() {
         return <ServiceCatalog />;
       case 'environments':
         return <Environments />;
+      case 'jira':
+        return <Jira />;
       case 'plan':
         return <Plan />;
       case 'infrastructure':

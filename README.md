@@ -603,3 +603,25 @@ GRAFANA_URL=http://localhost:3000
 ---
 
 This backend architecture provides a solid foundation for building a comprehensive Internal Developer Platform that can scale with your organization's needs while maintaining security, reliability, and developer productivity.
+
+---
+
+## Quick start (local dev)
+
+See `docs/integrations.md` for the new backend integrations service, setup, and usage.
+
+Commands:
+
+```bash
+npm install
+npm run dev:all      # run frontend + backend
+# or
+npm run dev:front    # frontend only
+npm run dev:server   # backend only
+```
+
+Health check:
+
+```bash
+curl http://localhost:3001/api/health
+```
