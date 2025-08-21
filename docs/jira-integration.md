@@ -14,6 +14,35 @@ The integration uses Jira Cloud REST API v3 with Basic auth via email + API toke
 - Node.js 18+, npm 9+
 - App dependencies installed: `npm install`
 
+## Use real Jira data (disable mocks)
+1) Create a Jira API token (Atlassian Account → Security → Create and manage API tokens).
+2) Set backend environment variables in `backend/.env`:
+```bash
+JIRA_BASE_URL=https://your-domain.atlassian.net
+JIRA_EMAIL=you@example.com
+JIRA_API_TOKEN=your_api_token
+BACKEND_MOCK=false
+```
+3) Restart the backend (or run both):
+```bash
+npm run dev:server
+# or
+npm run dev:all
+```
+4) Verify endpoints return live data:
+```bash
+curl "http://localhost:3001/api/jira/projects?maxResults=10" | jq '.values[0]'
+curl "http://localhost:3001/api/jira/issues/mine?maxResults=10&fields=summary,status,issuetype,updated" | jq '.issues[0].fields.summary'
+curl "http://localhost:3001/api/jira/projects/IDP/issues/grouped?maxResults=25&fields=summary,status" | jq '.groups | keys'
+```
+
+Notes:
+- `JIRA_BASE_URL` should not include `/rest/...`; it must be the site root (e.g., `https://your-domain.atlassian.net`).
+- The email must match the user for whom the token was created.
+- Ensure the user has permission to browse the selected projects/boards.
+- If your organization requires SSO and API tokens, ensure API token access is allowed.
+- Behind corporate VPN/proxy, verify the backend host can reach Atlassian.
+
 ## Configure environment
 Copy the example file:
 ```bash
@@ -52,6 +81,8 @@ Default URLs:
     - Query: `jql` (required), `startAt`, `maxResults`, `fields`
   - `GET /api/jira/issues/mine` — unresolved issues assigned to current user
     - Query: `startAt`, `maxResults`, `fields`
+  - `GET /api/jira/issues/mine/grouped` — grouped issues (open, inprogress, blocked, completed, closed)
+  - `GET /api/jira/projects/:projectKey/issues/grouped` — grouped issues scoped to a project
 
 Error codes:
 - `501` when Jira is not configured
@@ -129,3 +160,4 @@ BACKEND_MOCK=true   # leave true for mock data; set false for real Jira
 - 401/403: Token or permissions issue
 - CORS errors: Set `CORS_ORIGIN` correctly
 - Network/DNS: Verify the Jira base URL is reachable from your machine
+- Empty results: Confirm the authenticated user has access to the project and issues; try adjusting `fields`/`maxResults`.
